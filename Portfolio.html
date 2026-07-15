@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Black | Roblox Systems Developer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ============ TOKENS ============ */
+  :root{
+    --bg: #F5F7FB;
+    --bg-panel: #FFFFFF;
+    --bg-sunken: #ECF1F8;
+    --grid-line: rgba(28, 54, 94, 0.07);
+    --ink: #101826;
+    --ink-soft: #55617A;
+    --ink-faint: #8896AC;
+    --accent: #2F6FED;
+    --accent-soft: rgba(47,111,237,0.12);
+    --signal: #E88C30;
+    --line: #DCE3EE;
+    --shadow: 0 20px 40px -24px rgba(16,24,38,0.25);
+    --radius: 2px;
+    --ff-display: 'Space Grotesk', sans-serif;
+    --ff-body: 'Inter', sans-serif;
+    --ff-mono: 'IBM Plex Mono', monospace;
+  }
+  html[data-theme="dark"]{
+    --bg: #0B121F;
+    --bg-panel: #101A2C;
+    --bg-sunken: #0D1626;
+    --grid-line: rgba(120, 170, 255, 0.08);
+    --ink: #EAF0FB;
+    --ink-soft: #9FB0C9;
+    --ink-faint: #5E6E8A;
+    --accent: #5B9CFF;
+    --accent-soft: rgba(91,156,255,0.14);
+    --signal: #FFB454;
+    --line: #22304A;
+    --shadow: 0 20px 50px -20px rgba(0,0,0,0.55);
+  }
+
+  *,*::before,*::after{ box-sizing: border-box; }
+  html{ scroll-behavior: smooth; }
+  body{
+    margin:0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--ff-body);
+    -webkit-font-smoothing: antialiased;
+    transition: background-color .3s ease, color .3s ease;
+  }
+  h1,h2,h3{ font-family: var(--ff-display); margin:0; letter-spacing: -0.01em; }
+  p{ margin:0; }
+  a{ color: inherit; }
+  button{ font-family: inherit; }
+
+  ::selection{ background: var(--accent); color:#fff; }
+
+  :focus-visible{
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+  }
+
+  .mono{ font-family: var(--ff-mono); letter-spacing: 0.04em; }
+
+  /* Subtle blueprint grid background on the whole app */
+  .app{
+    display:flex;
+    min-height: 100vh;
+    background-image:
+      linear-gradient(var(--grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+
+  /* ============ CORNER-VIEWPORT SIGNATURE ============ */
+  .viewport{
+    position: relative;
+    background-color: var(--bg-panel);
+    background-image:
+      linear-gradient(var(--accent), var(--accent)),
+      linear-gradient(var(--accent), var(--accent)),
+      linear-gradient(var(--accent), var(--accent)),
+      linear-gradient(var(--accent), var(--accent)),
+      linear-gradient(var(--accent), var(--accent)),
+      linear-gradient(var(--accent), var(--accent)),
+      linear-gradient(var(--accent), var(--accent)),
+      linear-gradient(var(--accent), var(--accent));
+    background-repeat: no-repeat;
+    background-size:
+      16px 2px, 2px 16px,
+      16px 2px, 2px 16px,
+      16px 2px, 2px 16px,
+      16px 2px, 2px 16px;
+    background-position:
+      top 0 left 0, top 0 left 0,
+      top 0 right 0, top 0 right 0,
+      bottom 0 left 0, bottom 0 left 0,
+      bottom 0 right 0, bottom 0 right 0;
+    border: 1px solid var(--line);
+  }
+
+  /* ============ SIDEBAR ============ */
+  .sidebar{
+    width: 268px;
+    flex-shrink:0;
+    padding: 40px 28px;
+    border-right: 1px solid var(--line);
+    display:flex;
+    flex-direction:column;
+    position: sticky;
+    top:0;
+    height: 100vh;
+    background: var(--bg);
+  }
+  .brand{
+    font-size: 22px;
+    font-weight: 700;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .brand .dot{
+    width:8px; height:8px; border-radius:50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 4px var(--accent-soft);
+  }
+  .brand-tag{
+    margin-top:6px;
+    font-size: 11px;
+    color: var(--ink-faint);
+    text-transform: uppercase;
+  }
+
+  nav.primary-nav{
+    margin-top: 56px;
+    display:flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .nav-link{
+    position:relative;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    background:none;
+    border:none;
+    cursor:pointer;
+    padding: 12px 10px 12px 4px;
+    text-align:left;
+    color: var(--ink-soft);
+    font-size: 14.5px;
+    font-weight: 500;
+  }
+  .nav-link .node{
+    width:9px; height:9px;
+    border: 1.5px solid var(--ink-faint);
+    border-radius: 50%;
+    flex-shrink:0;
+    transition: background-color .2s ease, border-color .2s ease, transform .2s ease;
+  }
+  .nav-link::after{
+    content:"";
+    position:absolute;
+    left: 0; bottom: 4px;
+    height: 1px; width: 0;
+    background: var(--accent);
+    transition: width .35s ease;
+  }
+  .nav-link:hover{ color: var(--ink); }
+  .nav-link[aria-current="page"]{ color: var(--ink); font-weight: 600; }
+  .nav-link[aria-current="page"] .node{
+    background: var(--accent);
+    border-color: var(--accent);
+    transform: scale(1.15);
+  }
+  .nav-link[aria-current="page"]::after{ width: 26px; }
+
+  .sidebar-foot{
+    margin-top:auto;
+    display:flex;
+    flex-direction:column;
+    gap:18px;
+  }
+  .status{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size: 10.5px;
+    color: var(--ink-faint);
+    text-transform: uppercase;
+  }
+  .status .pulse{
+    width:6px;height:6px;border-radius:50%;
+    background:#3FBF6F;
+    box-shadow: 0 0 0 0 rgba(63,191,111,0.5);
+    animation: pulse 2.2s infinite;
+  }
+  @keyframes pulse{
+    0%{ box-shadow: 0 0 0 0 rgba(63,191,111,0.45); }
+    70%{ box-shadow: 0 0 0 6px rgba(63,191,111,0); }
+    100%{ box-shadow: 0 0 0 0 rgba(63,191,111,0); }
+  }
+
+  .theme-toggle{
+    display:flex;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow:hidden;
+    width: fit-content;
+  }
+  .theme-toggle button{
+    border:none;
+    background: var(--bg-panel);
+    color: var(--ink-faint);
+    font-family: var(--ff-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.06em;
+    padding: 8px 12px;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .theme-toggle button.active{
+    background: var(--accent);
+    color:#fff;
+  }
+  .theme-toggle button svg{ width:12px; height:12px; }
+
+  /* ============ MAIN STAGE ============ */
+  .stage{
+    flex:1;
+    min-width:0;
+    padding: 40px 56px 80px;
+  }
+  .view{ display:none; }
+  .view.active{
+    display:block;
+    animation: rise .45s ease both;
+  }
+  @keyframes rise{
+    from{ opacity:0; transform: translateY(10px); }
+    to{ opacity:1; transform: translateY(0); }
+  }
+
+  .eyebrow{
+    font-family: var(--ff-mono);
+    font-size: 11px;
+    color: var(--accent);
+    text-transform: uppercase;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-bottom: 14px;
+  }
+  .eyebrow::before{
+    content:"";
+    width: 18px; height:1px;
+    background: var(--accent);
+  }
+
+  /* Hero */
+  .hero{
+    padding: 56px 48px;
+    text-align:center;
+    margin-bottom: 48px;
+  }
+  .hero h1{
+    font-size: clamp(28px, 4vw, 40px);
+    font-weight: 600;
+  }
+  .hero p{
+    max-width: 640px;
+    margin: 18px auto 0;
+    color: var(--ink-soft);
+    font-size: 15.5px;
+    line-height: 1.7;
+  }
+  .hero-tags{
+    margin-top: 26px;
+    display:flex;
+    justify-content:center;
+    gap:10px;
+    flex-wrap: wrap;
+  }
+  .hero-tags span{
+    font-family: var(--ff-mono);
+    font-size: 10.5px;
+    color: var(--ink-soft);
+    border: 1px solid var(--line);
+    padding: 5px 10px;
+    border-radius: 20px;
+    background: var(--bg-sunken);
+  }
+
+  /* Work grid */
+  .work-grid{
+    display:grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 24px;
+  }
+  .card{
+    cursor:pointer;
+    overflow:hidden;
+    transition: transform .25s ease, box-shadow .25s ease;
+  }
+  .card:hover{
+    transform: translateY(-4px);
+    box-shadow: var(--shadow);
+  }
+  .thumb{
+    position:relative;
+    aspect-ratio: 16/9;
+    overflow:hidden;
+    background: var(--bg-sunken);
+    border-bottom: 1px solid var(--line);
+  }
+  .thumb img{
+    width:100%; height:100%;
+    object-fit: cover;
+    display:block;
+    transition: transform .5s ease;
+  }
+  .card:hover .thumb img{ transform: scale(1.06); }
+  .thumb::after{
+    content:"";
+    position:absolute; inset:0;
+    background: linear-gradient(180deg, transparent 55%, rgba(0,0,0,0.55) 100%);
+    opacity:0;
+    transition: opacity .3s ease;
+  }
+  .card:hover .thumb::after{ opacity:1; }
+  .play{
+    position:absolute; inset:0;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .play span{
+    width:52px; height:52px;
+    border-radius:50%;
+    background: rgba(16,24,38,0.55);
+    border: 1px solid rgba(255,255,255,0.5);
+    display:flex; align-items:center; justify-content:center;
+    backdrop-filter: blur(2px);
+    transform: scale(.85);
+    opacity:0;
+    transition: transform .3s ease, opacity .3s ease;
+  }
+  .card:hover .play span{ opacity:1; transform: scale(1); }
+  .play svg{ width:16px; height:16px; fill:#fff; margin-left:3px; }
+
+  .card-body{ padding: 18px 20px 22px; }
+  .card-body .tag{
+    font-family: var(--ff-mono);
+    font-size: 10.5px;
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+  .card-body h3{
+    margin-top:8px;
+    font-size: 18px;
+    font-weight: 600;
+  }
+  .card-body p{
+    margin-top:8px;
+    font-size: 13.5px;
+    color: var(--ink-soft);
+    line-height: 1.6;
+  }
+  .watch-link{
+    display: inline-flex;
+    align-items:center;
+    gap:6px;
+    margin-top:14px;
+    font-family: var(--ff-mono);
+    font-size: 11.5px;
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+  }
+  .watch-link:hover{ border-bottom-color: var(--accent); }
+  .watch-link svg{ width:11px; height:11px; }
+
+  @media (prefers-reduced-motion: no-preference){
+    .thumb::before{
+      content:"";
+      position:absolute; inset:0;
+      background: linear-gradient(100deg, transparent 40%, rgba(255,255,255,0.28) 50%, transparent 60%);
+      transform: translateX(-120%);
+      transition: transform .7s ease;
+      z-index:1;
+    }
+    .card:hover .thumb::before{ transform: translateX(120%); }
+  }
+
+  /* ============ MODAL ============ */
+  .modal{
+    position: fixed; inset:0;
+    display:flex; align-items:center; justify-content:center;
+    padding: 24px;
+    z-index: 100;
+    visibility:hidden;
+    opacity:0;
+    transition: opacity .25s ease, visibility .25s ease;
+  }
+  .modal[aria-hidden="false"]{ visibility:visible; opacity:1; }
+  .modal-backdrop{
+    position:absolute; inset:0;
+    background: rgba(8,12,20,0.72);
+  }
+  .modal-panel{
+    position:relative;
+    width: min(880px, 100%);
+    padding: 12px;
+  }
+  .modal-video{
+    aspect-ratio: 16/9;
+    background:#000;
+  }
+  .modal-video iframe{ width:100%; height:100%; border:0; display:block; }
+  .modal-close{
+    position:absolute;
+    top: -14px; right: -14px;
+    width: 30px; height:30px;
+    border-radius:50%;
+    border: 1px solid var(--line);
+    background: var(--bg-panel);
+    color: var(--ink);
+    font-size: 16px;
+    cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+  }
+
+  /* ============ RESPONSIVE ============ */
+  @media (max-width: 860px){
+    .app{ flex-direction: column; }
+    .sidebar{
+      position: static;
+      height:auto;
+      width:100%;
+      flex-direction: row;
+      align-items:center;
+      padding: 20px 24px;
+      border-right:none;
+      border-bottom: 1px solid var(--line);
+    }
+    nav.primary-nav{ margin-top:0; margin-left: 36px; flex-direction:row; gap: 20px; }
+    .sidebar-foot{ margin-top:0; margin-left:auto; flex-direction:row; align-items:center; }
+    .status{ display:none; }
+    .stage{ padding: 32px 20px 60px; }
+    .hero{ padding: 36px 20px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar">
+    <div class="brand"><span class="dot"></span>Black</div>
+    <div class="brand-tag mono">Roblox Systems Dev</div>
+
+    <nav class="primary-nav" aria-label="Primary">
+      <button class="nav-link" data-view="work" aria-current="page">
+        <span class="node"></span>
+        <span>Work</span>
+      </button>
+    </nav>
+
+    <div class="sidebar-foot">
+      <div class="status"><span class="pulse"></span><span>System online</span></div>
+      <div class="theme-toggle" role="group" aria-label="Theme">
+        <button type="button" id="lightBtn" class="active" aria-pressed="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+          Light
+        </button>
+        <button type="button" id="darkBtn" aria-pressed="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg>
+          Dark
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ============ MAIN STAGE ============ -->
+  <main class="stage">
+
+    <!-- WORK VIEW -->
+    <section class="view active" id="view-work" aria-label="Work">
+      <div class="hero viewport">
+        <div class="eyebrow" style="justify-content:center">Roblox Developer</div>
+        <h1>Hi, I'm Black</h1>
+        <p>I build Roblox systems players can actually feel: multiplayer mechanics, backend
+          architecture, and the small details that turn a prototype into a polished experience.</p>
+        <div class="hero-tags">
+          <span>Multiplayer Systems</span>
+          <span>Backend Architecture</span>
+          <span>Gameplay Programming</span>
+        </div>
+        <div class="hero-tags" style="margin-top:10px">
+          <span>Discord: 6arksoul</span>
+        </div>
+      </div>
+
+      <div class="eyebrow">Selected Work</div>
+      <div class="work-grid" id="workGrid"><!-- cards injected by JS from PROJECTS below --></div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ============ VIDEO MODAL ============ -->
+<div class="modal" id="videoModal" aria-hidden="true">
+  <div class="modal-backdrop" data-close></div>
+  <div class="modal-panel viewport">
+    <button class="modal-close" data-close aria-label="Close video">×</button>
+    <div class="modal-video"><iframe id="modalIframe" src="" title="Project video" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
+  </div>
+</div>
+
+<script>
+  /* ==========================================================
+     EDIT ME: your projects.
+     Add, remove, or edit entries here to update the Work grid.
+     `id` is the part of the YouTube URL after youtu.be/
+     ========================================================== */
+  const PROJECTS = [
+    {
+      id: 'GdWm1ItNStA',
+      title: 'Building System',
+      desc: 'Replace this with a short description of the system or feature shown in this video.'
+    },
+    {
+      id: 'i00p5DnY1Ds',
+      title: 'Inventory System',
+      desc: 'Replace this with a short description of the system or feature shown in this video.'
+    },
+    {
+      id: '0LI_NpqIcDI',
+      title: 'Teleportation System',
+      desc: 'Replace this with a short description of the system or feature shown in this video.'
+    },
+    {
+      id: 'BdrsL3ZINVA',
+      title: 'Stamina, Pathfind, First Person and Movement Systems',
+      desc: 'Replace this with a short description of the system or feature shown in this video.'
+    }
+  ];
+
+  /* ---------- render work cards ---------- */
+  const grid = document.getElementById('workGrid');
+  PROJECTS.forEach((proj, i) => {
+    const card = document.createElement('div');
+    card.className = 'card viewport';
+    card.setAttribute('role', 'button');
+    card.setAttribute('tabindex', '0');
+    card.setAttribute('aria-label', 'Play ' + proj.title);
+    card.innerHTML = `
+      <div class="thumb">
+        <img src="https://img.youtube.com/vi/${proj.id}/maxresdefault.jpg"
+             onerror="this.onerror=null;this.src='https://img.youtube.com/vi/${proj.id}/hqdefault.jpg'"
+             alt="${proj.title} thumbnail">
+        <div class="play"><span><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></span></div>
+      </div>
+      <div class="card-body">
+        <div class="tag">SYSTEM 0${i + 1}</div>
+        <h3>${proj.title}</h3>
+        <p>${proj.desc}</p>
+        <a class="watch-link" href="https://youtu.be/${proj.id}" target="_blank" rel="noopener noreferrer">
+          Watch on YouTube
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M7 17 17 7M8 7h9v9"/></svg>
+        </a>
+      </div>`;
+    const open = () => openModal(proj.id);
+    card.addEventListener('click', open);
+    card.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
+    card.querySelector('.watch-link').addEventListener('click', e => e.stopPropagation());
+    grid.appendChild(card);
+  });
+
+  /* ---------- view switching ---------- */
+  const navLinks = document.querySelectorAll('.nav-link');
+  const views = document.querySelectorAll('.view');
+  function showView(name){
+    views.forEach(v => v.classList.toggle('active', v.id === 'view-' + name));
+    navLinks.forEach(n => n.setAttribute('aria-current', n.dataset.view === name ? 'page' : 'false'));
+  }
+  navLinks.forEach(link => link.addEventListener('click', () => showView(link.dataset.view)));
+  showView('work');
+
+  /* ---------- video modal ---------- */
+  const modal = document.getElementById('videoModal');
+  const iframe = document.getElementById('modalIframe');
+  function openModal(id){
+    iframe.src = 'https://www.youtube.com/embed/' + id + '?autoplay=1&rel=0';
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeModal(){
+    modal.setAttribute('aria-hidden', 'true');
+    iframe.src = '';
+    document.body.style.overflow = '';
+  }
+  modal.querySelectorAll('[data-close]').forEach(el => el.addEventListener('click', closeModal));
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+  /* ---------- theme toggle ---------- */
+  const lightBtn = document.getElementById('lightBtn');
+  const darkBtn = document.getElementById('darkBtn');
+  function setTheme(mode){
+    document.documentElement.setAttribute('data-theme', mode);
+    lightBtn.classList.toggle('active', mode === 'light');
+    darkBtn.classList.toggle('active', mode === 'dark');
+    lightBtn.setAttribute('aria-pressed', mode === 'light');
+    darkBtn.setAttribute('aria-pressed', mode === 'dark');
+  }
+  lightBtn.addEventListener('click', () => setTheme('light'));
+  darkBtn.addEventListener('click', () => setTheme('dark'));
+</script>
+</body>
+</html>>
